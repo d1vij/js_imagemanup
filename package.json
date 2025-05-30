@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "canvas": "^3.0.0-rc3",
+    "image-js": "^0.37.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@types/node": "^22.15.27"
+  }
+}

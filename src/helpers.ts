@@ -1,6 +1,6 @@
-import { TranscodeEncoding } from "buffer";
-import { LargeNumberLike } from "crypto";
-import Image from "image-js";
+import chalk from "chalk";
+
+import {Image} from "image-js";
 
 type TRed = number;
 type TBlue = number;
@@ -11,21 +11,21 @@ export type TPixelData = [TRed, TBlue, TGreen, TAlpha];
 
 
 
-function average(arr: number[]): number {
+function arrayAverage(arr: number[]): number {
 
     let len = arr.length;
     return arr.length !== 0 ? arraySum(arr) / len : 0;
 }
 
 
-export function arraySum(arr: number[]) : number {
-    return arr.reduce((a,b) => (a+b), 0);
+export function arraySum(arr: number[]): number {
+    return arr.reduce((a, b) => (a + b), 0);
 }
 
 
 export async function pixelateImage(_image: Image, gridSize: number): Promise<Image> {
     // more the grid size more the samples, more the pixelation
-    
+
     let _width = _image.width;
     let _height = _image.height;
 
@@ -58,10 +58,10 @@ export async function pixelateImage(_image: Image, gridSize: number): Promise<Im
                     }
                 }
             }
-            let redAvg = Math.floor(average(red));
-            let greenAvg = Math.floor(average(green));
-            let blueAvg = Math.floor(average(blue));
-            let alphaAvg = Math.floor(average(alpha));
+            let redAvg = Math.floor(arrayAverage(red));
+            let greenAvg = Math.floor(arrayAverage(green));
+            let blueAvg = Math.floor(arrayAverage(blue));
+            let alphaAvg = Math.floor(arrayAverage(alpha));
 
             //setting values
             for (let dx = 0; dx < gridSize; dx++) {
@@ -83,12 +83,76 @@ export async function pixelateImage(_image: Image, gridSize: number): Promise<Im
     return _pixelated;
 }
 
+//----------------------------------------------------------------------------
+const DENSITIES = {
+    LOW: " .:-=+*#%@",
+    HIGH: "@#$%&BHGKEVDPQ0OZYXWUYUCLQwonburixtfjv|()/1}{[]?-_+~><i!lI;:,\" ^\`\'. ",
+    HIGH2: " .\'\`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnumbowqLCJUYYXZO0QPDVEKGHBSA&EW#%$@"
+}
+type TDensity = "LOW" | "HIGH" | "HIGH2";
+interface IAsciiConfig {
+    _image: Image,
+    gridSize: number,
+    density: TDensity,
+    pixelate?: boolean,
+    greyscale?: boolean,
+    spacing?:number
+}
+
+export async function convertToAscii(config: IAsciiConfig): Promise<string> {
+    let _image = config._image;
+    const _gridSize = config.gridSize
+    const _densityString = DENSITIES[config.density];
+    const _spacing = ' '.repeat(config.spacing ? config.spacing : 0);
+
+    if (config.pixelate) _image = await pixelateImage(_image, _gridSize);
 
 
-// export async function convertToAscii(_image: Image, gridSize:number) : Promise<Image>{
+    let _outString: string = "";
+    const scaleFactor = (_densityString.length - 1) / 255 // normalizing brightness to match string density
 
-// }
+    const _width = _image.width;
+    const _height = _image.height;
 
+    let _index = 0;
+
+    if (config.greyscale) {
+        _image = _image.grey();
+        
+        for (let x = 0; x < _width; x += _gridSize) {
+            for (let y = 0; y < _height; y += _gridSize) {
+                if (x < _width && y < _height) {
+                    _index =Math.floor(_image.getPixelXY(x, y)[0] * scaleFactor)
+                    _outString += _spacing + _densityString.at(_index);
+                }
+            }
+
+            _outString += '\n';
+        }
+        
+    } else {
+        let _pixelData = []
+        
+        
+        for (let x = 0; x < _width; x += _gridSize) {
+            for (let y = 0; y < _height; y += _gridSize) {
+                if (x < _width && y < _height) {
+                    _pixelData = _image.getPixelXY(x,y).slice(0,3);
+                    _index = Math.floor(arrayAverage(_pixelData) * scaleFactor)
+
+                    
+                    _outString += _spacing +  chalk.rgb(_pixelData[0], _pixelData[1], _pixelData[2])( _densityString.at(_index));
+                }
+            }
+
+            _outString += '\n';
+        }
+
+        _image.getPixelsArray()
+        
+    }
+    return _outString;
+}
 
 
 

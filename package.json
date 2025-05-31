@@ -4,7 +4,13 @@
     "canvas": "^3.0.0-rc3",
     "chalk": "^5.4.1",
     "image-js": "^0.37.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@types/node": "^22.15.27"
